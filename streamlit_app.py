@@ -2,6 +2,8 @@ import streamlit as st
 from api_logic import bulk_upsert
 from api_fetch import get_all_project_segment_items_csv
 from api_file import get_all_project_segments_csv
+from api_companies import get_all_companies_csv
+
 
 
 st.set_page_config(page_title="HIVE BulkUpsert Tool", layout="centered", page_icon="🛠️")
@@ -14,12 +16,14 @@ client_secret = st.sidebar.text_input("client_secret", type="password")
 st.sidebar.markdown("---")
 st.sidebar.info("Vul je API-gegevens in. Die blijven bewaard zolang je deze pagina open hebt.")
 
-tab1, tab2, tab3, tab4 = st.tabs([
+tab1, tab2, tab3, tab4, tab5 = st.tabs([
     "BulkUpsert",
     "Add Unit",
     "Get all project segment items",
-    "Get all project segments"      # <-- nieuwe tab!
+    "Get all project segments",
+    "Get all companies"
 ])
+
 
 with tab1:
     st.title("BulkUpsert uitvoeren")
@@ -94,6 +98,28 @@ with tab4:
                         label="Download Segments CSV",
                         data=csv_content,
                         file_name="projectSegments.csv",
+                        mime="text/csv"
+                    )
+
+with tab5:
+    st.title("Get all companies")
+    st.markdown("Klik op onderstaande knop om alle bedrijven als CSV te downloaden:")
+    if st.button("Genereer Companies CSV", key="get_companies_csv"):
+        if not all([manufacturer_id, client_id, client_secret]):
+            st.error("Vul alle credentials in de sidebar in!")
+        else:
+            with st.spinner('Ophalen en converteren...'):
+                csv_content = get_all_companies_csv(manufacturer_id, client_id, client_secret)
+                if isinstance(csv_content, tuple) and csv_content[0] is None:
+                    st.error(csv_content[1])
+                elif not csv_content:
+                    st.error("Onbekende fout of geen data opgehaald.")
+                else:
+                    st.success("CSV succesvol gegenereerd!")
+                    st.download_button(
+                        label="Download Companies CSV",
+                        data=csv_content,
+                        file_name="bedrijven_export.csv",
                         mime="text/csv"
                     )
 
