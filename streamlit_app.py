@@ -127,7 +127,6 @@ st.markdown("""
 ---
 **Hulp nodig?** Neem contact op met IT Support.
 """)
-st.markdown("""
----
+st.("""
 Arbi.Taramov@polletgroupit.com
 """)
