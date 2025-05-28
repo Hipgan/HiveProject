@@ -32,6 +32,21 @@ with tab1:
             with st.spinner('Verzenden...'):
                 response = bulk_upsert(manufacturer_id, client_id, client_secret, json_input)
             st.code(response, language='json')
+# ---- Helptekst / JSON voorbeeld toevoegen ----
+    st.markdown("""
+    <br>
+    **Dit is de structuur van hoe de JSON moet worden opgebouwd (exact dezelfde structuur):**
+    """, unsafe_allow_html=True)
+    st.code(
+    '''{
+  "company discount group": "D40",
+  "customer price group": "PGC01",
+  "currency": "EUR",
+  "description": "",
+  "hiveCPQId": "d11c5a1323ed4b789238e168b803803b",
+  "name": "AMARQUE LEISURE SOLUTIONS B.V.",
+  "parent_dealerId": "5d5b62fa8dd94e3c9009929f2682f331"
+}''', language="json")
 
 with tab2:
     st.title("Add Unit")
