@@ -4,6 +4,8 @@ from api_fetch import get_all_project_segment_items_csv
 from api_file import get_all_project_segments_csv
 from api_companies import get_all_companies_csv
 
+with open("logo_base64.txt") as f:
+    base64_logo = f.read()
 
 
 st.set_page_config(page_title="HIVE BulkUpsert Tool", layout="centered", page_icon="🛠️")
