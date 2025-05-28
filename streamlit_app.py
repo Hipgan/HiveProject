@@ -1,6 +1,8 @@
 import streamlit as st
 from api_logic import bulk_upsert
 from api_fetch import get_all_project_segment_items_csv
+from api_file import get_all_project_segments_csv
+
 
 st.set_page_config(page_title="HIVE BulkUpsert Tool", layout="centered", page_icon="🛠️")
 
