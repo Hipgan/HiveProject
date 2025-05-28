@@ -54,6 +54,28 @@ with tab3:
                         mime="text/csv"
                     )
 
+with tab4:
+    st.title("Get all project segments")
+    st.markdown("Klik op onderstaande knop om alle project segments als CSV te downloaden:")
+    if st.button("Genereer Segments CSV", key="get_project_segments_csv"):
+        if not all([manufacturer_id, client_id, client_secret]):
+            st.error("Vul alle credentials in de sidebar in!")
+        else:
+            with st.spinner('Ophalen en converteren...'):
+                csv_content = get_all_project_segments_csv(manufacturer_id, client_id, client_secret)
+                if isinstance(csv_content, tuple) and csv_content[0] is None:
+                    st.error(csv_content[1])
+                elif not csv_content:
+                    st.error("Onbekende fout of geen data opgehaald.")
+                else:
+                    st.success("CSV succesvol gegenereerd!")
+                    st.download_button(
+                        label="Download Segments CSV",
+                        data=csv_content,
+                        file_name="projectSegments.csv",
+                        mime="text/csv"
+                    )
+
 st.markdown("""
 ---
 **Hulp nodig?** Neem contact op met IT Support.
