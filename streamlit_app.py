@@ -126,5 +126,8 @@ with tab5:
 st.markdown("""
 ---
 **Hulp nodig?** Neem contact op met IT Support.
+""")
+st.markdown("""
+---
 Arbi.Taramov@polletgroupit.com
 """)
