@@ -12,8 +12,12 @@ client_secret = st.sidebar.text_input("client_secret", type="password")
 st.sidebar.markdown("---")
 st.sidebar.info("Vul je API-gegevens in. Die blijven bewaard zolang je deze pagina open hebt.")
 
-# TABS
-tab1, tab2, tab3 = st.tabs(["BulkUpsert", "Add Unit", "Get all project segment items"])
+tab1, tab2, tab3, tab4 = st.tabs([
+    "BulkUpsert",
+    "Add Unit",
+    "Get all project segment items",
+    "Get all project segments"      # <-- nieuwe tab!
+])
 
 with tab1:
     st.title("BulkUpsert uitvoeren")
