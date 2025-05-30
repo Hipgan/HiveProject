@@ -5,6 +5,8 @@ from api_file import get_all_project_segments_csv
 from api_companies import get_all_companies_csv
 from api_reset import reset_custom_object_cache  # <-- De script voor de reset knop!
 import streamlit as st
+import base64
+from io import BytesIO
 
 USERNAME = st.secrets["login"]["username"]
 PASSWORD = st.secrets["login"]["password"]
@@ -37,13 +39,18 @@ if not check_password():
     st.stop()
 
 
+# Lees Base64 string in
 with open("logo_base64.txt") as f:
-    base64_logo = f.read()
+    base64_string = f.read()
+
+# Decodeer de string naar bytes
+image_bytes = base64.b64decode(base64_string)
 
 
 st.set_page_config(page_title="HIVE BulkUpsert Tool", layout="centered", page_icon="🛠️")
 
 # SIDEBAR: Credentials
+st.sidebar.image(image_bytes, width=150)
 st.sidebar.header("API Credentials")
 manufacturer_id = st.sidebar.text_input("manufacturerId")
 client_id = st.sidebar.text_input("client_id")
