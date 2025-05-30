@@ -56,7 +56,7 @@ try:
 except Exception as e:
     st.sidebar.error(f"Fout in het logo: {e}")
 else:
-    st.sidebar.image(image, width=250)
+    st.sidebar.image(image, width=150)
 # Einde Logo
 
 # SIDEBAR: Credentials
