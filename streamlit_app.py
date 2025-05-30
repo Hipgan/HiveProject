@@ -3,7 +3,7 @@ from api_logic import bulk_upsert
 from api_fetch import get_all_project_segment_items_csv
 from api_file import get_all_project_segments_csv
 from api_companies import get_all_companies_csv
-from api_logic import reset_custom_object_cache  # <-- De script voor de reset knop!
+from api_reset import reset_custom_object_cache  # <-- De script voor de reset knop!
 
 
 with open("logo_base64.txt") as f:
