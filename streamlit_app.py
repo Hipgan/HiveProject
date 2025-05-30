@@ -50,7 +50,7 @@ image_bytes = base64.b64decode(base64_string)
 st.set_page_config(page_title="HIVE BulkUpsert Tool", layout="centered", page_icon="🛠️")
 
 # SIDEBAR: Credentials
-st.sidebar.image(image_bytes, width=150)
+st.sidebar.image(image_bytes, width=250)
 st.sidebar.header("API Credentials")
 manufacturer_id = st.sidebar.text_input("manufacturerId")
 client_id = st.sidebar.text_input("client_id")
