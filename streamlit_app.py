@@ -3,6 +3,8 @@ from api_logic import bulk_upsert
 from api_fetch import get_all_project_segment_items_csv
 from api_file import get_all_project_segments_csv
 from api_companies import get_all_companies_csv
+from api_logic import reset_custom_object_cache  # <-- De script voor de reset knop!
+
 
 with open("logo_base64.txt") as f:
     base64_logo = f.read()
@@ -53,6 +55,28 @@ with tab1:
   "name": "AMARQUE LEISURE SOLUTIONS B.V.",
   "parent_dealerId": "5d5b62fa8dd94e3c9009929f2682f331"
 }''', language="json")
+
+with tab1:
+    st.title("BulkUpsert uitvoeren")
+    st.markdown("Plak hieronder je JSON-object:")
+    json_input = st.text_area("JSON input", height=200, key="bulkupsert_json")
+    
+    # Reset cache knop
+    if st.button("Reset Custom Object Cache", key="reset_cache_btn"):
+        if not all([manufacturer_id, client_id, client_secret]):
+            st.error("Vul alle credentials in!")
+        else:
+            with st.spinner('Resetten...'):
+                reset_response = reset_custom_object_cache(manufacturer_id, client_id, client_secret)
+            st.code(reset_response, language='json')
+    
+    if st.button("Verzenden", key="bulkupsert_send"):
+        if not all([manufacturer_id, client_id, client_secret, json_input.strip()]):
+            st.error("Vul alle credentials én JSON in!")
+        else:
+            with st.spinner('Verzenden...'):
+                response = bulk_upsert(manufacturer_id, client_id, client_secret, json_input)
+            st.code(response, language='json')
 
 with tab2:
     st.title("Add Unit")
