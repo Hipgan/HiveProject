@@ -42,7 +42,7 @@ if not check_password():
 
 st.set_page_config(page_title="HIVE BulkUpsert Tool", layout="centered", page_icon="🛠️")
 
-# Logo
+# Start Logo
 with open("logo_base64.txt") as f:
     base64_string = f.read().strip()
 
@@ -56,7 +56,8 @@ try:
 except Exception as e:
     st.sidebar.error(f"Fout in het logo: {e}")
 else:
-    st.sidebar.image(image, width=150)
+    st.sidebar.image(image, width=250)
+# Einde Logo
 
 # SIDEBAR: Credentials
 st.sidebar.header("API Credentials")
