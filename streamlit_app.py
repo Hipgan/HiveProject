@@ -7,6 +7,7 @@ from api_reset import reset_custom_object_cache  # <-- De script voor de reset k
 import streamlit as st
 import base64
 from io import BytesIO
+from PIL import Image
 
 USERNAME = st.secrets["login"]["username"]
 PASSWORD = st.secrets["login"]["password"]
@@ -39,12 +40,22 @@ if not check_password():
     st.stop()
 
 
-# Lees Base64 string in
+# Lees de base64-string in
 with open("logo_base64.txt") as f:
-    base64_string = f.read()
+    base64_string = f.read().strip()
 
-# Decodeer de string naar bytes
+if "base64," in base64_string:
+    base64_string = base64_string.split("base64,")[-1]
+
 image_bytes = base64.b64decode(base64_string)
+
+# Probeer als afbeelding te laden
+try:
+    image = Image.open(BytesIO(image_bytes))
+except Exception as e:
+    st.sidebar.error(f"Fout in het logo: {e}")
+else:
+    st.sidebar.image(image, width=150)  # <-- Niet klikbaar!
 
 
 st.set_page_config(page_title="HIVE BulkUpsert Tool", layout="centered", page_icon="🛠️")
