@@ -33,6 +33,15 @@ with tab1:
     st.title("BulkUpsert uitvoeren")
     st.markdown("Plak hieronder je JSON-object:")
     json_input = st.text_area("JSON input", height=200, key="bulkupsert_json_tab1")
+    
+    # Verzonden knop
+    if st.button("Verzenden", key="bulkupsert_send_tab1"):
+        if not all([manufacturer_id, client_id, client_secret, json_input.strip()]):
+            st.error("Vul alle credentials én JSON in!")
+        else:
+            with st.spinner('Verzenden...'):
+                response = bulk_upsert(manufacturer_id, client_id, client_secret, json_input)
+            st.code(response, language='json')
 
     # Reset cache knop
     if st.button("Reset Custom Object Cache", key="reset_cache_btn_tab1"):
@@ -42,15 +51,7 @@ with tab1:
             with st.spinner('Resetten...'):
                 reset_response = reset_custom_object_cache(manufacturer_id, client_id, client_secret)
             st.code(reset_response, language='json')
-
-    if st.button("Verzenden", key="bulkupsert_send_tab1"):
-        if not all([manufacturer_id, client_id, client_secret, json_input.strip()]):
-            st.error("Vul alle credentials én JSON in!")
-        else:
-            with st.spinner('Verzenden...'):
-                response = bulk_upsert(manufacturer_id, client_id, client_secret, json_input)
-            st.code(response, language='json')
-
+            
     # Helptekst / JSON voorbeeld toevoegen
     st.markdown("""
     <br>
