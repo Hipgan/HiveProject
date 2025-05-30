@@ -4,6 +4,37 @@ from api_fetch import get_all_project_segment_items_csv
 from api_file import get_all_project_segments_csv
 from api_companies import get_all_companies_csv
 from api_reset import reset_custom_object_cache  # <-- De script voor de reset knop!
+import streamlit as st
+
+USERNAME = st.secrets["login"]["username"]
+PASSWORD = st.secrets["login"]["password"]
+
+def check_password():
+    def password_entered():
+        if (st.session_state["password"] == PASSWORD
+            and st.session_state["username"] == USERNAME):
+            st.session_state["password_correct"] = True
+            del st.session_state["password"]
+            del st.session_state["username"]
+        else:
+            st.session_state["password_correct"] = False
+
+    if "password_correct" not in st.session_state:
+        st.title("Login vereist")
+        st.text_input("Gebruikersnaam", on_change=password_entered, key="username")
+        st.text_input("Wachtwoord", type="password", on_change=password_entered, key="password")
+        st.stop()
+    elif not st.session_state["password_correct"]:
+        st.title("Login vereist")
+        st.text_input("Gebruikersnaam", on_change=password_entered, key="username")
+        st.text_input("Wachtwoord", type="password", on_change=password_entered, key="password")
+        st.error("Onjuiste gebruikersnaam of wachtwoord")
+        st.stop()
+    else:
+        return True
+
+if not check_password():
+    st.stop()
 
 
 with open("logo_base64.txt") as f:
