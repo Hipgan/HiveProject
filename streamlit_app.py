@@ -32,15 +32,26 @@ tab1, tab2, tab3, tab4, tab5 = st.tabs([
 with tab1:
     st.title("BulkUpsert uitvoeren")
     st.markdown("Plak hieronder je JSON-object:")
-    json_input = st.text_area("JSON input", height=200, key="bulkupsert_json")
-    if st.button("Verzenden", key="bulkupsert_send"):
+    json_input = st.text_area("JSON input", height=200, key="bulkupsert_json_tab1")
+
+    # Reset cache knop
+    if st.button("Reset Custom Object Cache", key="reset_cache_btn_tab1"):
+        if not all([manufacturer_id, client_id, client_secret]):
+            st.error("Vul alle credentials in!")
+        else:
+            with st.spinner('Resetten...'):
+                reset_response = reset_custom_object_cache(manufacturer_id, client_id, client_secret)
+            st.code(reset_response, language='json')
+
+    if st.button("Verzenden", key="bulkupsert_send_tab1"):
         if not all([manufacturer_id, client_id, client_secret, json_input.strip()]):
             st.error("Vul alle credentials én JSON in!")
         else:
             with st.spinner('Verzenden...'):
                 response = bulk_upsert(manufacturer_id, client_id, client_secret, json_input)
             st.code(response, language='json')
-# ---- Helptekst / JSON voorbeeld toevoegen ----
+
+    # Helptekst / JSON voorbeeld toevoegen
     st.markdown("""
     <br>
     **Dit is de structuur van hoe de JSON moet worden opgebouwd (exact dezelfde structuur):**
@@ -55,28 +66,6 @@ with tab1:
   "name": "AMARQUE LEISURE SOLUTIONS B.V.",
   "parent_dealerId": "5d5b62fa8dd94e3c9009929f2682f331"
 }''', language="json")
-
-with tab1:
-    st.title("BulkUpsert uitvoeren")
-    st.markdown("Plak hieronder je JSON-object:")
-    json_input = st.text_area("JSON input", height=200, key="bulkupsert_json")
-    
-    # Reset cache knop
-    if st.button("Reset Custom Object Cache", key="reset_cache_btn"):
-        if not all([manufacturer_id, client_id, client_secret]):
-            st.error("Vul alle credentials in!")
-        else:
-            with st.spinner('Resetten...'):
-                reset_response = reset_custom_object_cache(manufacturer_id, client_id, client_secret)
-            st.code(reset_response, language='json')
-    
-    if st.button("Verzenden", key="bulkupsert_send"):
-        if not all([manufacturer_id, client_id, client_secret, json_input.strip()]):
-            st.error("Vul alle credentials én JSON in!")
-        else:
-            with st.spinner('Verzenden...'):
-                response = bulk_upsert(manufacturer_id, client_id, client_secret, json_input)
-            st.code(response, language='json')
 
 with tab2:
     st.title("Add Unit")
