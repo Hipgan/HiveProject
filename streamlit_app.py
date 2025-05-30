@@ -40,7 +40,9 @@ if not check_password():
     st.stop()
 
 
-# Lees de base64-string in
+st.set_page_config(page_title="HIVE BulkUpsert Tool", layout="centered", page_icon="🛠️")
+
+# Logo
 with open("logo_base64.txt") as f:
     base64_string = f.read().strip()
 
@@ -49,16 +51,12 @@ if "base64," in base64_string:
 
 image_bytes = base64.b64decode(base64_string)
 
-# Probeer als afbeelding te laden
 try:
     image = Image.open(BytesIO(image_bytes))
 except Exception as e:
     st.sidebar.error(f"Fout in het logo: {e}")
 else:
-    st.sidebar.image(image, width=150)  # <-- Niet klikbaar!
-
-
-st.set_page_config(page_title="HIVE BulkUpsert Tool", layout="centered", page_icon="🛠️")
+    st.sidebar.image(image, width=150)
 
 # SIDEBAR: Credentials
 st.sidebar.header("API Credentials")
