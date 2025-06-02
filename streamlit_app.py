@@ -8,6 +8,8 @@ import streamlit as st
 import base64
 from io import BytesIO
 from PIL import Image
+from api_unit import update_units_of_components
+
 
 USERNAME = st.secrets["login"]["username"]
 PASSWORD = st.secrets["login"]["password"]
@@ -67,13 +69,15 @@ client_secret = st.sidebar.text_input("client_secret", type="password")
 st.sidebar.markdown("---")
 st.sidebar.info("Vul je API-gegevens in. Die blijven bewaard zolang je deze pagina open hebt.")
 
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "BulkUpsert",
     "Add Unit",
     "Get all project segment items",
     "Get all project segments",
-    "Get all companies"
+    "Get all companies",
+    "Update Units"   # nieuwe tab!
 ])
+
 
 
 with tab1:
@@ -185,6 +189,35 @@ with tab5:
                         file_name="bedrijven_export.csv",
                         mime="text/csv"
                     )
+
+with tab6:
+    st.title("Update Unit van Components")
+    st.markdown("""
+    **Wijzig de 'unit' van één of meerdere bestaande componenten (op basis van articleCode).**
+    - Plak de gewenste articleCodes, gescheiden door komma's.
+    - Vul het gewenste unitCode in (bijvoorbeeld: MAT, PCS, ...).
+    - Geef de juiste versie op (bijvoorbeeld: 3.0.0).
+    """)
+
+    # Velden
+    article_codes_input = st.text_area("Plak lijst van articleCodes (gescheiden door komma's)", height=100, key="unit_article_codes")
+    unit_code_input = st.text_input("Geef de unitCode op (bijvoorbeeld: MAT, PCS, ...)", key="unit_unit_code")
+    version_input = st.text_input("Geef de versie op (bijvoorbeeld: 3.0.0)", key="unit_version")
+
+    if st.button("Update Unit(s)", key="update_units_btn"):
+        if not all([manufacturer_id, client_id, client_secret, article_codes_input.strip(), unit_code_input.strip(), version_input.strip()]):
+            st.error("Vul alle velden én API-credentials in!")
+        else:
+            with st.spinner("Bezig met updaten..."):
+                results = update_units_of_components(
+                    manufacturer_id, client_id, client_secret,
+                    article_codes_input, unit_code_input, version_input
+                )
+            if results and isinstance(results, list):
+                st.success("Update uitgevoerd! Zie resultaat hieronder.")
+                st.write(results)
+            else:
+                st.error("Er is iets misgegaan of er zijn geen resultaten.")
 
 st.markdown("""
 ---
