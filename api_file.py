@@ -33,6 +33,7 @@ def get_all_project_segments_csv(manufacturer_id, client_id, client_secret):
         # 4. CSV schrijven (naar in-memory string)
         output = io.StringIO()
         fieldnames = [
+            'root.id',  # Nieuw: rootobject ID
             'project.id', 'project.name', 'listPrice', 'purchasePrice', 'subDistributorPurchasePrice', 'salesPrice',
             'currency', 'orderStatus', 'status', 'projectSegmentItems'
         ]
@@ -46,6 +47,7 @@ def get_all_project_segments_csv(manufacturer_id, client_id, client_secret):
             segment_items = seg.get('projectSegmentItems', [])
 
             writer.writerow({
+                'root.id': seg.get('id', ''),  # Vul het rootobject ID in
                 'project.id': project.get('id', ''),
                 'project.name': project.get('name', ''),
                 'listPrice': price.get('listPrice', ''),
