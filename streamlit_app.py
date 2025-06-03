@@ -71,7 +71,7 @@ client_secret = st.sidebar.text_input("client_secret", type="password")
 st.sidebar.markdown("---")
 st.sidebar.info("Vul je API-gegevens in. Die blijven bewaard zolang je deze pagina open hebt.")
 
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "BulkUpsert",
     "Get all project segment items",
     "Get all project segments",
