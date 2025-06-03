@@ -73,7 +73,6 @@ st.sidebar.info("Vul je API-gegevens in. Die blijven bewaard zolang je deze pagi
 
 tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "BulkUpsert",
-    "Add Unit",
     "Get all project segment items",
     "Get all project segments",
     "Get all companies",
@@ -123,12 +122,8 @@ with tab1:
   "parent_dealerId": "5d5b62fa8dd94e3c9009929f2682f331"
 }''', language="json")
 
-with tab2:
-    st.title("Add Unit")
-    st.markdown("**Hier kun je straks units toevoegen.**")
-    st.info("Deze tab is nog niet geconfigureerd.")
 
-with tab3:
+with tab2:
     st.title("Get all project segment items")
     st.markdown("Klik op onderstaande knop om alle project segment items als CSV te downloaden:")
     if st.button("Genereer CSV", key="get_project_segment_items_csv"):
@@ -150,7 +145,7 @@ with tab3:
                         mime="text/csv"
                     )
 
-with tab4:
+with tab3:
     st.title("Get all project segments")
     st.markdown("Klik op onderstaande knop om alle project segments als CSV te downloaden:")
     if st.button("Genereer Segments CSV", key="get_project_segments_csv"):
@@ -172,7 +167,7 @@ with tab4:
                         mime="text/csv"
                     )
 
-with tab5:
+with tab4:
     st.title("Get all companies")
     st.markdown("Klik op onderstaande knop om alle bedrijven als CSV te downloaden:")
     if st.button("Genereer Companies CSV", key="get_companies_csv"):
@@ -194,7 +189,7 @@ with tab5:
                         mime="text/csv"
                     )
 
-with tab6:
+with tab5:
     st.title("Update Unit van Components")
     st.markdown("""
     **Wijzig de 'unit' van één of meerdere bestaande componenten (op basis van articleCode).**
@@ -224,7 +219,7 @@ with tab6:
                 st.error("Er is iets misgegaan of er zijn geen resultaten.")
 
 
-with tab7:
+with tab6:
     st.title("Move to Step 4")
     st.markdown("""
     **Bevestig de shipping date en verplaats meerdere projecten tegelijk naar Step 4.**
