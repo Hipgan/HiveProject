@@ -9,6 +9,8 @@ import base64
 from io import BytesIO
 from PIL import Image
 from api_unit import update_units_of_components
+from api_step4 import move_segments_to_step4
+
 
 
 USERNAME = st.secrets["login"]["username"]
@@ -69,14 +71,16 @@ client_secret = st.sidebar.text_input("client_secret", type="password")
 st.sidebar.markdown("---")
 st.sidebar.info("Vul je API-gegevens in. Die blijven bewaard zolang je deze pagina open hebt.")
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
     "BulkUpsert",
     "Add Unit",
     "Get all project segment items",
     "Get all project segments",
     "Get all companies",
-    "Update Units"   # nieuwe tab!
+    "Update Units",
+    "Move to Step 4"   # nieuwe tab!
 ])
+
 
 
 
@@ -218,6 +222,36 @@ with tab6:
                 st.write(results)
             else:
                 st.error("Er is iets misgegaan of er zijn geen resultaten.")
+
+
+with tab7:
+    st.title("Move to Step 4")
+    st.markdown("""
+    **Bevestig de shipping date en verplaats meerdere projecten tegelijk naar Step 4.**
+    - Upload of plak je lijst (tab-gescheiden, eerste regel is header; kolommen: salesId, projectId)
+    - Geef de gewenste shippingDateConfirmed in (dd/mm/yy, bijvoorbeeld 05/06/25).
+    """)
+
+    input_content = st.text_area(
+        "Plak hier je tab-gescheiden input-bestand (salesId\tprojectId)", height=150, key="step4_input"
+    )
+    # Eventueel: upload = st.file_uploader("Of upload je input.txt bestand", type="txt")
+    shipping_date = st.text_input("ShippingDateConfirmed (dd/mm/yy)", key="step4_datum")
+
+    if st.button("Verwerk naar Step 4", key="step4_btn"):
+        if not all([manufacturer_id, client_id, client_secret, input_content.strip(), shipping_date.strip()]):
+            st.error("Vul alle velden én API-credentials in!")
+        else:
+            with st.spinner("Bezig met verwerken..."):
+                resultaten = move_segments_to_step4(
+                    manufacturer_id, client_id, client_secret, shipping_date, input_content
+                )
+            if resultaten and isinstance(resultaten, list):
+                st.success("Klaar! Zie log/resultaten hieronder.")
+                st.write(resultaten)
+            else:
+                st.error("Er is iets misgegaan of er zijn geen resultaten.")
+
 
 st.markdown("""
 ---
