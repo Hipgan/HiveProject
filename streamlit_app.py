@@ -10,6 +10,8 @@ from io import BytesIO
 from PIL import Image
 from api_unit import update_units_of_components
 from api_step4 import move_segments_to_step4
+from api_ExportBom import export_bom_to_excel
+
 
 
 
@@ -71,14 +73,16 @@ client_secret = st.sidebar.text_input("client_secret", type="password")
 st.sidebar.markdown("---")
 st.sidebar.info("Vul je API-gegevens in. Die blijven bewaard zolang je deze pagina open hebt.")
 
-tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+tab_names = [
     "BulkUpsert",
     "Get all project segment items",
     "Get all project segments",
     "Get all companies",
     "Update Units",
-    "Move to Step 4"   # nieuwe tab!
-])
+    "Move to Step 4",
+    "Export BOM"   # <-- Nieuwe tab
+]
+tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(tab_names)
 
 
 
@@ -247,7 +251,35 @@ with tab6:
             else:
                 st.error("Er is iets misgegaan of er zijn geen resultaten.")
 
-
+with tab7:
+    st.title("Export BOM naar Excel")
+    st.markdown("""
+    Exporteer de volledige stuklijststructuur (BOM) van een configuratie naar een Excel-bestand.<br>
+    Vul het <b>ProjectSegmentItemId</b> in en klik op 'Genereer BOM Excel'.
+    """, unsafe_allow_html=True)
+    segment_item_id = st.text_input("ProjectSegmentItemId", key="exportbom_segmentid")
+    
+    if st.button("Genereer BOM Excel", key="exportbom_btn"):
+        if not all([manufacturer_id, client_id, client_secret, segment_item_id.strip()]):
+            st.error("Vul alle API-credentials én een geldig ProjectSegmentItemId in!")
+        else:
+            with st.spinner("BOM wordt opgehaald en verwerkt..."):
+                excel_bytes, filename, error = export_bom_to_excel(
+                    manufacturer_id, client_id, client_secret, segment_item_id
+                )
+            if error:
+                st.error(f"Fout bij exporteren van BOM: {error}")
+            elif excel_bytes:
+                st.success("Excel-bestand gegenereerd!")
+                st.download_button(
+                    label="Download Excel",
+                    data=excel_bytes,
+                    file_name=filename,
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+            else:
+                st.error("Onbekende fout, geen bestand aangemaakt.")
+                
 st.markdown("""
 ---
 **Hulp nodig?** Neem contact op met IT Support.
