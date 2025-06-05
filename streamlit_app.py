@@ -3,17 +3,14 @@ from api_logic import bulk_upsert
 from api_fetch import get_all_project_segment_items_csv
 from api_file import get_all_project_segments_csv
 from api_companies import get_all_companies_csv
-from api_reset import reset_custom_object_cache  # <-- De script voor de reset knop!
-import streamlit as st
+from api_reset import reset_custom_object_cache
+from api_unit import update_units_of_components
+from api_step4 import move_segments_to_step4
+from api_ExportBom import export_bom_to_excel  # <-- jouw nieuwe BOM-export
+
 import base64
 from io import BytesIO
 from PIL import Image
-from api_unit import update_units_of_components
-from api_step4 import move_segments_to_step4
-from api_ExportBom import export_bom_to_excel
-
-
-
 
 USERNAME = st.secrets["login"]["username"]
 PASSWORD = st.secrets["login"]["password"]
@@ -45,27 +42,22 @@ def check_password():
 if not check_password():
     st.stop()
 
+st.set_page_config(page_title="HIVE Tool", layout="centered", page_icon="🛠️")
 
-st.set_page_config(page_title="HIVE BulkUpsert Tool", layout="centered", page_icon="🛠️")
-
-# Start Logo
+# Sidebar logo
 with open("logo_base64.txt") as f:
     base64_string = f.read().strip()
-
 if "base64," in base64_string:
     base64_string = base64_string.split("base64,")[-1]
-
 image_bytes = base64.b64decode(base64_string)
-
 try:
     image = Image.open(BytesIO(image_bytes))
 except Exception as e:
     st.sidebar.error(f"Fout in het logo: {e}")
 else:
     st.sidebar.image(image, width=150)
-# Einde Logo
 
-# SIDEBAR: Credentials
+# Sidebar credentials
 st.sidebar.header("API Credentials")
 manufacturer_id = st.sidebar.text_input("manufacturerId")
 client_id = st.sidebar.text_input("client_id")
@@ -73,50 +65,45 @@ client_secret = st.sidebar.text_input("client_secret", type="password")
 st.sidebar.markdown("---")
 st.sidebar.info("Vul je API-gegevens in. Die blijven bewaard zolang je deze pagina open hebt.")
 
-tab_names = [
-    "BulkUpsert",
-    "Get all project segment items",
-    "Get all project segments",
-    "Get all companies",
-    "Update Units",
-    "Move to Step 4",
-    "Export BOM"   # <-- Nieuwe tab
-]
-tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs(tab_names)
+# Sidebar functionaliteitskeuze
+functionaliteit = st.sidebar.selectbox(
+    "Kies een functie:",
+    [
+        "BulkUpsert",
+        "Get all project segment items",
+        "Get all project segments",
+        "Get all companies",
+        "Update Units",
+        "Move to Step 4",
+        "Export BOM"
+    ]
+)
 
-
-
-
-with tab1:
+# 1. BulkUpsert
+if functionaliteit == "BulkUpsert":
     st.title("BulkUpsert uitvoeren")
     st.markdown("Plak hieronder je JSON-object:")
-    json_input = st.text_area("JSON input", height=200, key="bulkupsert_json_tab1")
-    
-    # Verzonden knop
-    if st.button("Verzenden", key="bulkupsert_send_tab1"):
+    json_input = st.text_area("JSON input", height=200, key="bulkupsert_json")
+    if st.button("Verzenden", key="bulkupsert_send"):
         if not all([manufacturer_id, client_id, client_secret, json_input.strip()]):
             st.error("Vul alle credentials én JSON in!")
         else:
             with st.spinner('Verzenden...'):
                 response = bulk_upsert(manufacturer_id, client_id, client_secret, json_input)
             st.code(response, language='json')
-
-    # Reset cache knop
-    if st.button("Reset Custom Object Cache", key="reset_cache_btn_tab1"):
+    if st.button("Reset Custom Object Cache", key="reset_cache_btn"):
         if not all([manufacturer_id, client_id, client_secret]):
             st.error("Vul alle credentials in!")
         else:
             with st.spinner('Resetten...'):
                 reset_response = reset_custom_object_cache(manufacturer_id, client_id, client_secret)
             st.code(reset_response, language='json')
-            
-    # Helptekst / JSON voorbeeld toevoegen
     st.markdown("""
     <br>
-    **Dit is de structuur van hoe de JSON moet worden opgebouwd (exact dezelfde structuur):**
+    **Voorbeeld JSON structuur:**
     """, unsafe_allow_html=True)
     st.code(
-    '''{
+        '''{
   "company discount group": "D40",
   "customer price group": "PGC01",
   "currency": "EUR",
@@ -126,13 +113,13 @@ with tab1:
   "parent_dealerId": "5d5b62fa8dd94e3c9009929f2682f331"
 }''', language="json")
 
-
-with tab2:
+# 2. Get all project segment items
+elif functionaliteit == "Get all project segment items":
     st.title("Get all project segment items")
     st.markdown("Klik op onderstaande knop om alle project segment items als CSV te downloaden:")
     if st.button("Genereer CSV", key="get_project_segment_items_csv"):
         if not all([manufacturer_id, client_id, client_secret]):
-            st.error("Vul alle credentials in de sidebar in!")
+            st.error("Vul alle credentials in!")
         else:
             with st.spinner('Ophalen en converteren...'):
                 csv_content = get_all_project_segment_items_csv(manufacturer_id, client_id, client_secret)
@@ -149,12 +136,13 @@ with tab2:
                         mime="text/csv"
                     )
 
-with tab3:
+# 3. Get all project segments
+elif functionaliteit == "Get all project segments":
     st.title("Get all project segments")
     st.markdown("Klik op onderstaande knop om alle project segments als CSV te downloaden:")
     if st.button("Genereer Segments CSV", key="get_project_segments_csv"):
         if not all([manufacturer_id, client_id, client_secret]):
-            st.error("Vul alle credentials in de sidebar in!")
+            st.error("Vul alle credentials in!")
         else:
             with st.spinner('Ophalen en converteren...'):
                 csv_content = get_all_project_segments_csv(manufacturer_id, client_id, client_secret)
@@ -171,12 +159,13 @@ with tab3:
                         mime="text/csv"
                     )
 
-with tab4:
+# 4. Get all companies
+elif functionaliteit == "Get all companies":
     st.title("Get all companies")
     st.markdown("Klik op onderstaande knop om alle bedrijven als CSV te downloaden:")
     if st.button("Genereer Companies CSV", key="get_companies_csv"):
         if not all([manufacturer_id, client_id, client_secret]):
-            st.error("Vul alle credentials in de sidebar in!")
+            st.error("Vul alle credentials in!")
         else:
             with st.spinner('Ophalen en converteren...'):
                 csv_content = get_all_companies_csv(manufacturer_id, client_id, client_secret)
@@ -193,7 +182,8 @@ with tab4:
                         mime="text/csv"
                     )
 
-with tab5:
+# 5. Update Units
+elif functionaliteit == "Update Units":
     st.title("Update Unit van Components")
     st.markdown("""
     **Wijzig de 'unit' van één of meerdere bestaande componenten (op basis van articleCode).**
@@ -201,13 +191,10 @@ with tab5:
     - Vul het gewenste unitCode in (bijvoorbeeld: MAT, PCS, ...).
     - Geef de juiste versie op (bijvoorbeeld: 3.0.0).
     """)
-
-    # Velden
-    article_codes_input = st.text_area("Plak lijst van articleCodes (gescheiden door komma's)", height=100, key="unit_article_codes")
-    unit_code_input = st.text_input("Geef de unitCode op (bijvoorbeeld: MAT, PCS, ...)", key="unit_unit_code")
-    version_input = st.text_input("Geef de versie op (bijvoorbeeld: 3.0.0)", key="unit_version")
-
-    if st.button("Update Unit(s)", key="update_units_btn"):
+    article_codes_input = st.text_area("Plak lijst van articleCodes (gescheiden door komma's)", height=100)
+    unit_code_input = st.text_input("Geef de unitCode op (bijvoorbeeld: MAT, PCS, ...)")
+    version_input = st.text_input("Geef de versie op (bijvoorbeeld: 3.0.0)")
+    if st.button("Update Unit(s)"):
         if not all([manufacturer_id, client_id, client_secret, article_codes_input.strip(), unit_code_input.strip(), version_input.strip()]):
             st.error("Vul alle velden én API-credentials in!")
         else:
@@ -222,22 +209,19 @@ with tab5:
             else:
                 st.error("Er is iets misgegaan of er zijn geen resultaten.")
 
-
-with tab6:
+# 6. Move to Step 4
+elif functionaliteit == "Move to Step 4":
     st.title("Move to Step 4")
     st.markdown("""
     **Bevestig de shipping date en verplaats meerdere projecten tegelijk naar Step 4.**
     - Upload of plak je lijst (tab-gescheiden, eerste regel is header; kolommen: salesId, projectId)
     - Geef de gewenste shippingDateConfirmed in (dd/mm/yy, bijvoorbeeld 05/06/25).
     """)
-
     input_content = st.text_area(
-        "Plak hier je tab-gescheiden input-bestand (salesId\tprojectId)", height=150, key="step4_input"
+        "Plak hier je tab-gescheiden input-bestand (salesId\tprojectId)", height=150
     )
-    # Eventueel: upload = st.file_uploader("Of upload je input.txt bestand", type="txt")
-    shipping_date = st.text_input("ShippingDateConfirmed (dd/mm/yy)", key="step4_datum")
-
-    if st.button("Verwerk naar Step 4", key="step4_btn"):
+    shipping_date = st.text_input("ShippingDateConfirmed (dd/mm/yy)")
+    if st.button("Verwerk naar Step 4"):
         if not all([manufacturer_id, client_id, client_secret, input_content.strip(), shipping_date.strip()]):
             st.error("Vul alle velden én API-credentials in!")
         else:
@@ -251,15 +235,15 @@ with tab6:
             else:
                 st.error("Er is iets misgegaan of er zijn geen resultaten.")
 
-with tab7:
+# 7. Export BOM
+elif functionaliteit == "Export BOM":
     st.title("Export BOM naar Excel")
     st.markdown("""
     Exporteer de volledige stuklijststructuur (BOM) van een configuratie naar een Excel-bestand.<br>
     Vul het <b>ProjectSegmentItemId</b> in en klik op 'Genereer BOM Excel'.
     """, unsafe_allow_html=True)
-    segment_item_id = st.text_input("ProjectSegmentItemId", key="exportbom_segmentid")
-    
-    if st.button("Genereer BOM Excel", key="exportbom_btn"):
+    segment_item_id = st.text_input("ProjectSegmentItemId")
+    if st.button("Genereer BOM Excel"):
         if not all([manufacturer_id, client_id, client_secret, segment_item_id.strip()]):
             st.error("Vul alle API-credentials én een geldig ProjectSegmentItemId in!")
         else:
@@ -279,7 +263,7 @@ with tab7:
                 )
             else:
                 st.error("Onbekende fout, geen bestand aangemaakt.")
-                
+
 st.markdown("""
 ---
 **Hulp nodig?** Neem contact op met IT Support.
