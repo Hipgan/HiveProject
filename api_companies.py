@@ -1,8 +1,8 @@
 import requests
-import csv
-import io
+import pandas as pd
+from io import BytesIO
 
-def get_all_companies_csv(manufacturer_id, client_id, client_secret):
+def get_all_companies_excel(manufacturer_id, client_id, client_secret, output_path=None):
     try:
         # 1. Ophalen van de token
         token_url = "https://ebusinesscloud.eu.auth0.com/oauth/token"
@@ -30,33 +30,24 @@ def get_all_companies_csv(manufacturer_id, client_id, client_secret):
         if isinstance(companies, dict) and "items" in companies:
             companies = companies["items"]
 
-        # 4. Exporteren naar CSV (in memory!)
-        output = io.StringIO()
-        fieldnames = [
-            'id', 'companyType', 'name', 'description', 'telephone', 'vatNumber',
-            'email', 'websiteUrl', 'preferredLanguage',
-            'addressLine1', 'addressLine2', 'city', 'postalCode', 'countryIso',
-            'distributor'  # <-- nieuwe kolom
-        ]
-        writer = csv.DictWriter(output, fieldnames=fieldnames)
-        writer.writeheader()
-
+        # 4. Data voorbereiden
+        data = []
         for company in companies:
             info = company.get('info', {})
             address = info.get('address', {})
 
-            # Default leeg, tenzij sub-distributeur met parent distributor
             distributor_name = ''
             if company.get('companyType', '') == 'SUB_DISTRIBUTOR':
                 sub_settings = company.get('subDistributorSettings', {})
                 distributor = sub_settings.get('distributor', {})
                 distributor_name = distributor.get('name', '')
 
-            writer.writerow({
+            row = {
                 'id': company.get('id', ''),
                 'companyType': company.get('companyType', ''),
                 'name': info.get('name', ''),
                 'description': info.get('description', ''),
+                'distributor': distributor_name,  # Vijfde kolom!
                 'telephone': info.get('telephone', ''),
                 'vatNumber': info.get('vatNumber', ''),
                 'email': info.get('email', ''),
@@ -67,9 +58,41 @@ def get_all_companies_csv(manufacturer_id, client_id, client_secret):
                 'city': address.get('city', ''),
                 'postalCode': address.get('postalCode', ''),
                 'countryIso': address.get('countryIso', ''),
-                'distributor': distributor_name  # Vul in, blijft leeg bij distributor
-            })
-        return output.getvalue()
+            }
+            data.append(row)
+
+        # 5. Zet volgorde van de kolommen
+        columns = [
+            'id',
+            'companyType',
+            'name',
+            'description',
+            'distributor',          # Vijfde kolom
+            'telephone',
+            'vatNumber',
+            'email',
+            'websiteUrl',
+            'preferredLanguage',
+            'addressLine1',
+            'addressLine2',
+            'city',
+            'postalCode',
+            'countryIso'
+        ]
+        df = pd.DataFrame(data, columns=columns)
+
+        # 6. Exporteren naar Excel (in memory)
+        output = BytesIO()
+        df.to_excel(output, index=False)
+        output.seek(0)
+
+        # Optioneel: direct opslaan naar bestand
+        if output_path:
+            with open(output_path, 'wb') as f:
+                f.write(output.getbuffer())
+
+        return output
     except Exception as e:
         return None, f"Onverwachte fout: {str(e)}"
 
+st.download_button("Download Excel", excel_file, "bedrijven.xlsx")
