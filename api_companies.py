@@ -35,7 +35,8 @@ def get_all_companies_csv(manufacturer_id, client_id, client_secret):
         fieldnames = [
             'id', 'companyType', 'name', 'description', 'telephone', 'vatNumber',
             'email', 'websiteUrl', 'preferredLanguage',
-            'addressLine1', 'addressLine2', 'city', 'postalCode', 'countryIso'
+            'addressLine1', 'addressLine2', 'city', 'postalCode', 'countryIso',
+            'distributor'  # <-- nieuwe kolom
         ]
         writer = csv.DictWriter(output, fieldnames=fieldnames)
         writer.writeheader()
@@ -43,6 +44,13 @@ def get_all_companies_csv(manufacturer_id, client_id, client_secret):
         for company in companies:
             info = company.get('info', {})
             address = info.get('address', {})
+
+            # Default leeg, tenzij sub-distributeur met parent distributor
+            distributor_name = ''
+            if company.get('companyType', '') == 'SUB_DISTRIBUTOR':
+                sub_settings = company.get('subDistributorSettings', {})
+                distributor = sub_settings.get('distributor', {})
+                distributor_name = distributor.get('name', '')
 
             writer.writerow({
                 'id': company.get('id', ''),
@@ -58,8 +66,10 @@ def get_all_companies_csv(manufacturer_id, client_id, client_secret):
                 'addressLine2': address.get('addressLine2', ''),
                 'city': address.get('city', ''),
                 'postalCode': address.get('postalCode', ''),
-                'countryIso': address.get('countryIso', '')
+                'countryIso': address.get('countryIso', ''),
+                'distributor': distributor_name  # Vul in, blijft leeg bij distributor
             })
         return output.getvalue()
     except Exception as e:
         return None, f"Onverwachte fout: {str(e)}"
+
