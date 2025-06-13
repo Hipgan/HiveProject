@@ -2,7 +2,7 @@ import streamlit as st
 from api_logic import bulk_upsert
 from api_fetch import get_all_project_segment_items_csv
 from api_file import get_all_project_segments_csv
-from api_companies import get_all_companies_csv
+from api_companies import get_all_companies_excel
 from api_reset import reset_custom_object_cache
 from api_unit import update_units_of_components
 from api_step4 import move_segments_to_step4
