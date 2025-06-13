@@ -4,7 +4,7 @@ from io import BytesIO
 
 def get_all_companies_excel(manufacturer_id, client_id, client_secret, output_path=None):
     try:
-        # 1. Ophalen van de token
+        # 1. Token ophalen
         token_url = "https://ebusinesscloud.eu.auth0.com/oauth/token"
         token_payload = {
             "grant_type": "client_credentials",
@@ -19,18 +19,18 @@ def get_all_companies_excel(manufacturer_id, client_id, client_secret, output_pa
         response.raise_for_status()
         access_token = response.json()["access_token"]
 
-        # 2. API-call om bedrijven op te halen
+        # 2. Bedrijven ophalen
         data_url = f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/companies?pageSize=1000"
         headers = {"Authorization": f"Bearer {access_token}"}
         response = requests.get(data_url, headers=headers)
         response.raise_for_status()
         companies = response.json()
 
-        # 3. Als de respons een dict is met 'items'
+        # 3. "items" uitpakken indien nodig
         if isinstance(companies, dict) and "items" in companies:
             companies = companies["items"]
 
-        # 4. Data voorbereiden
+        # 4. Data structureren
         data = []
         for company in companies:
             info = company.get('info', {})
@@ -61,7 +61,7 @@ def get_all_companies_excel(manufacturer_id, client_id, client_secret, output_pa
             }
             data.append(row)
 
-        # 5. Zet volgorde van de kolommen
+        # 5. Kolomvolgorde
         columns = [
             'id',
             'companyType',
@@ -81,12 +81,12 @@ def get_all_companies_excel(manufacturer_id, client_id, client_secret, output_pa
         ]
         df = pd.DataFrame(data, columns=columns)
 
-        # 6. Exporteren naar Excel (in memory)
+        # 6. Excel maken in-memory
         output = BytesIO()
         df.to_excel(output, index=False)
         output.seek(0)
 
-        # Optioneel: direct opslaan naar bestand
+        # Optioneel: opslaan op schijf
         if output_path:
             with open(output_path, 'wb') as f:
                 f.write(output.getbuffer())
@@ -94,5 +94,3 @@ def get_all_companies_excel(manufacturer_id, client_id, client_secret, output_pa
         return output
     except Exception as e:
         return None, f"Onverwachte fout: {str(e)}"
-
-st.download_button("Download Excel", excel_file, "bedrijven.xlsx")
