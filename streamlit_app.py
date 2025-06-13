@@ -159,7 +159,6 @@ elif functionaliteit == "Get all project segments":
                         mime="text/csv"
                     )
 
-# 4. Get all companies
 elif functionaliteit == "Get all companies":
     st.title("Get all companies")
     st.markdown("Klik op onderstaande knop om alle bedrijven als Excel te downloaden:")
