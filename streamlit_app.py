@@ -162,25 +162,26 @@ elif functionaliteit == "Get all project segments":
 # 4. Get all companies
 elif functionaliteit == "Get all companies":
     st.title("Get all companies")
-    st.markdown("Klik op onderstaande knop om alle bedrijven als CSV te downloaden:")
-    if st.button("Genereer Companies CSV", key="get_companies_csv"):
+    st.markdown("Klik op onderstaande knop om alle bedrijven als Excel te downloaden:")
+    if st.button("Genereer Companies Excel", key="get_companies_excel"):
         if not all([manufacturer_id, client_id, client_secret]):
             st.error("Vul alle credentials in!")
         else:
             with st.spinner('Ophalen en converteren...'):
-                csv_content = get_all_companies_csv(manufacturer_id, client_id, client_secret)
-                if isinstance(csv_content, tuple) and csv_content[0] is None:
-                    st.error(csv_content[1])
-                elif not csv_content:
+                excel_content = get_all_companies_excel(manufacturer_id, client_id, client_secret)
+                if isinstance(excel_content, tuple) and excel_content[0] is None:
+                    st.error(excel_content[1])
+                elif not excel_content:
                     st.error("Onbekende fout of geen data opgehaald.")
                 else:
-                    st.success("CSV succesvol gegenereerd!")
+                    st.success("Excel succesvol gegenereerd!")
                     st.download_button(
-                        label="Download Companies CSV",
-                        data=csv_content,
-                        file_name="bedrijven_export.csv",
-                        mime="text/csv"
+                        label="Download Companies Excel",
+                        data=excel_content,
+                        file_name="bedrijven_export.xlsx",
+                        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
+
 
 # 5. Update Units
 elif functionaliteit == "Update Units":
