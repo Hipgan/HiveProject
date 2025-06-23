@@ -1,15 +1,8 @@
-import streamlit as st
 import requests
 import json
 import datetime
 import traceback
-import base64
-from io import BytesIO
-from PIL import Image
 
-# ===============================
-# Functie: move_segments_to_step4
-# ===============================
 def move_segments_to_step4(manufacturer_id, client_id, client_secret, input_content):
     log = []
     try:
@@ -33,7 +26,7 @@ def move_segments_to_step4(manufacturer_id, client_id, client_secret, input_cont
     lines = input_content.strip().splitlines()
     for i, line in enumerate(lines):
         if i == 0:
-            continue  # skip header
+            continue
         parts = line.strip().split('\t')
         if len(parts) < 3:
             continue
