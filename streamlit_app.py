@@ -214,26 +214,21 @@ elif functionaliteit == "Move to Step 4":
     st.title("Move to Step 4")
     st.markdown("""
     **Bevestig de shipping date en verplaats meerdere projecten tegelijk naar Step 4.**
-    - Upload of plak je lijst (tab-gescheiden, eerste regel is header; kolommen: salesId, projectId)
-    - Geef de gewenste shippingDateConfirmed in (dd/mm/yy, bijvoorbeeld 05/06/25).
+    - Upload of plak je lijst (tab-gescheiden, eerste regel is header; kolommen: salesId, projectId, shippingDateConfirmed)
+    - ShippingDateConfirmed moet in formaat dd/mm/yy zijn (bijv: 05/06/25).
     """)
     input_content = st.text_area(
-        "Plak hier je tab-gescheiden input-bestand (salesId\tprojectId)", height=150
+        "Plak hier je tab-gescheiden input-bestand (salesId\tprojectId\tshippingDate)", height=150
     )
-    shipping_date = st.text_input("ShippingDateConfirmed (dd/mm/yy)")
     if st.button("Verwerk naar Step 4"):
-        if not all([manufacturer_id, client_id, client_secret, input_content.strip(), shipping_date.strip()]):
+        if not all([manufacturer_id, client_id, client_secret, input_content.strip()]):
             st.error("Vul alle velden én API-credentials in!")
         else:
             with st.spinner("Bezig met verwerken..."):
                 resultaten = move_segments_to_step4(
-                    manufacturer_id, client_id, client_secret, shipping_date, input_content
+                    manufacturer_id, client_id, client_secret, input_content
                 )
-            if resultaten and isinstance(resultaten, list):
-                st.success("Klaar! Zie log/resultaten hieronder.")
-                st.write(resultaten)
-            else:
-                st.error("Er is iets misgegaan of er zijn geen resultaten.")
+
 
 # 7. Export BOM (meerdere tegelijk!)
 elif functionaliteit == "Export BOM":
