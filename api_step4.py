@@ -1,12 +1,7 @@
-import requests
-import json
-import datetime
-import traceback
-
 def move_segments_to_step4(
-    manufacturer_id, client_id, client_secret, shipping_date_str, input_content
+    manufacturer_id, client_id, client_secret, input_content
 ):
-    """Voert voor elke (salesId, projectId) uit input_content een moveToStep4 uit."""
+    """Voert voor elke (salesId, projectId, shippingDate) een moveToStep4 uit."""
     log = []
     try:
         # Token ophalen
@@ -26,13 +21,6 @@ def move_segments_to_step4(
     except Exception as e:
         return [{"error": f"Fout bij ophalen token: {e}"}]
 
-    # Parse datum
-    try:
-        dt = datetime.datetime.strptime(shipping_date_str.strip(), "%d/%m/%y")
-        shipping_date = dt.strftime("%Y-%m-%dT16:00:00Z")
-    except Exception as e:
-        return [{"error": "Ongeldige datum. Gebruik formaat dd/mm/yy. Bijv: 05/06/25"}]
-
     # Input verwerken
     regels = []
     lines = input_content.strip().splitlines()
@@ -40,14 +28,21 @@ def move_segments_to_step4(
         if i == 0:
             continue  # header skippen
         parts = line.strip().split('\t')
-        if len(parts) < 2:
+        if len(parts) < 3:
             continue
         sales_id = parts[0].strip()
         project_id = parts[1].strip()
-        if sales_id and project_id:
-            regels.append((sales_id, project_id))
+        date_str = parts[2].strip()
+        if not (sales_id and project_id and date_str):
+            continue
+        try:
+            dt = datetime.datetime.strptime(date_str, "%d/%m/%y")
+            shipping_date = dt.strftime("%Y-%m-%dT16:00:00Z")
+            regels.append((sales_id, project_id, shipping_date))
+        except Exception as e:
+            log.append({"i": i+1, "sales_id": sales_id, "project_id": project_id, "error": f"Ongeldige datum: {date_str}"})
 
-    for i, (sales_id, project_id) in enumerate(regels, start=1):
+    for i, (sales_id, project_id, shipping_date) in enumerate(regels, start=1):
         try:
             # 1. Project ophalen
             url_proj = f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/projects/{project_id}"
@@ -114,6 +109,7 @@ def move_segments_to_step4(
                 "project_id": project_id,
                 "project_segment_id": project_segment_id,
                 "sales_id": sales_id,
+                "shipping_date": shipping_date,
                 "status_code": r.status_code,
                 "response": r.text[:200] + ("..." if len(r.text) > 200 else ""),
                 "body": body
