@@ -213,10 +213,11 @@ elif functionaliteit == "Update Units":
 elif functionaliteit == "Move to Step 4":
     st.title("Move to Step 4")
     st.markdown("""
-    **Bevestig de shipping date en verplaats meerdere projecten tegelijk naar Step 4.**
-    - Upload of plak je lijst (tab-gescheiden, eerste regel is header; kolommen: salesId, projectId, shippingDateConfirmed)
-    - ShippingDateConfirmed moet in formaat dd/mm/yy zijn (bijv: 05/06/25).
-    """)
+    **Verplaats meerdere projecten tegelijk naar Step 4.**
+    - Upload of plak je lijst (tab-gescheiden, eerste regel is header).
+    - Verwacht formaat: <code>salesId\tprojectId\tshippingDateConfirmed</code>  
+    - ShippingDateConfirmed moet in formaat <code>dd/mm/yy</code> zijn (bijv: 05/07/25).
+    """, unsafe_allow_html=True)
     input_content = st.text_area(
         "Plak hier je tab-gescheiden input-bestand (salesId\tprojectId\tshippingDate)", height=150
     )
@@ -228,6 +229,11 @@ elif functionaliteit == "Move to Step 4":
                 resultaten = move_segments_to_step4(
                     manufacturer_id, client_id, client_secret, input_content
                 )
+            if resultaten:
+                st.success("Klaar! Zie log/resultaten hieronder.")
+                st.write(resultaten)
+            else:
+                st.warning("Er is niets gebeurd of geen resultaat ontvangen.")
 
 
 # 7. Export BOM (meerdere tegelijk!)
