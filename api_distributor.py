@@ -37,14 +37,40 @@ def val(name, row):
     except Exception:
         return ""
 
-def val_postcode(name, row):
-    waarde = val(name, row)
-    if re.match(r"^\\d+\\.0$", waarde):
+def val_postcode(name, row, fallback_index=None):
+    try:
+        waarde = row.get(name)
+        if pd.isna(waarde):
+            waarde = ""
+        elif isinstance(waarde, float) and waarde.is_integer():
+            waarde = str(int(waarde))
+        else:
+            waarde = str(waarde).strip()
+        if waarde.lower() == "nan":
+            waarde = ""
+    except Exception:
+        waarde = ""
+
+    if not waarde and fallback_index is not None and fallback_index < len(row):
+        fallback_value = str(row.iloc[fallback_index]).strip()
+        if fallback_value:
+            print(f"[⚠️ fallback] '{name}' niet gevonden of leeg, gebruik kolom {fallback_index + 1}: '{fallback_value}'")
+            waarde = fallback_value
+
+    if waarde == "":
+        return ""
+
+    # Strip .0 indien nodig
+    if re.match(r"^\d+\.0$", waarde):
         waarde = str(int(float(waarde)))
-    match = re.match(r"^(\\d{4})([A-Z]{2})$", waarde.replace(" ", "").upper())
+
+    # Als formaat 9999AA is, voeg spatie toe
+    match = re.match(r"^(\d{4})([A-Z]{2})$", waarde.replace(" ", "").upper())
     if match:
         return f"{match.group(1)} {match.group(2)}"
+
     return waarde
+
 
 def verwerk_distributeur(df, row_number, manufacturer_id, client_id, client_secret):
     log = []
