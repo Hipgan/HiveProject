@@ -7,6 +7,8 @@ from api_reset import reset_custom_object_cache
 from api_unit import update_units_of_components
 from api_step4 import move_segments_to_step4
 from api_ExportBom import export_bom_to_excel  # aangepast: accepteert nu lijst van ids
+from api_distributor import verwerk_distributeur
+
 
 import base64
 from io import BytesIO
@@ -75,7 +77,8 @@ functionaliteit = st.sidebar.selectbox(
         "Get all companies",
         "Update Units",
         "Move to Step 4",
-        "Export BOM"
+        "Export BOM",
+        "Import Distributor"
     ]
 )
 
@@ -266,6 +269,32 @@ elif functionaliteit == "Export BOM":
                 )
             else:
                 st.error("Onbekende fout, geen bestand aangemaakt.")
+
+# 7. Import Distributor"
+elif functionaliteit == "Import Distributor":
+    st.title("📦 Import Distributor")
+    st.markdown("Upload een Excel-bestand met distributeurgegevens. Kies een rij om te verwerken.")
+
+    uploaded_file = st.file_uploader("Upload Excel (.xlsx)", type=["xlsx"])
+    if uploaded_file:
+        df = pd.read_excel(uploaded_file)
+        df.columns = df.columns.str.replace(u'\xa0', ' ', regex=False).str.strip()
+
+        row_options = [f"{i + 2}: {df.iloc[i].get('Company Name of Distributor', 'Onbekend')}" for i in range(len(df))]
+        selected_index = st.selectbox(
+            "Kies rij om te verwerken:",
+            options=list(range(len(df))),
+            format_func=lambda i: row_options[i]
+        )
+
+        if st.button("🚀 Start verwerking"):
+            if not all([manufacturer_id, client_id, client_secret]):
+                st.error("Vul je API-gegevens in!")
+            else:
+                with st.spinner("Bezig met verwerken..."):
+                    resultaat = verwerk_distributeur(df, selected_index, manufacturer_id, client_id, client_secret)
+                st.text_area("Logbestand:", resultaat, height=300)
+                st.download_button("📥 Download log", resultaat, file_name="log_distributor.txt")
 
 st.markdown("""
 ---
