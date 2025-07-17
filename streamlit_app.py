@@ -8,6 +8,8 @@ from api_unit import update_units_of_components
 from api_step4 import move_segments_to_step4
 from api_ExportBom import export_bom_to_excel  # aangepast: accepteert nu lijst van ids
 from api_distributor import verwerk_distributeur
+import pandas as pd
+
 
 
 import base64
