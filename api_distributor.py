@@ -192,7 +192,7 @@ def verwerk_distributeur(df, row_number, manufacturer_id, client_id, client_secr
         reset_url = f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/resetCustomObjectUpdateTimestamp"
         reset_resp = requests.post(reset_url, headers=api_headers)
         l(f"🔁 Reset status: {reset_resp.status_code}")
-        if reset_resp.status_code != 200:
+        if reset_resp.status_code != 204:
             return f"❌ Fout bij reset timestamp: {reset_resp.text}"
 
         l("✅ Distributeurverwerking voltooid zonder fouten.")
