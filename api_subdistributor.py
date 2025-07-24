@@ -84,7 +84,6 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
                 "client_secret": client_secret,
                 "audience": "https://ebusinesscloud.eu.auth0.com/api/v2/",
                 "domain": "https://ebusinesscloud.eu.auth0.com"
-
             }
         )
         if token_resp.status_code != 200:
