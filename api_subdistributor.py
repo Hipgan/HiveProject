@@ -78,10 +78,10 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
             "https://ebusinesscloud.eu.auth0.com/oauth/token",
             headers={"Content-Type": "application/json"},
             json={
+                "grant_type": "client_credentials",
                 "client_id": client_id,
                 "client_secret": client_secret,
-                "audience": "https://connect.hivecpq.com/",
-                "grant_type": "client_credentials"
+                "audience": "https://ebusinesscloud.eu.auth0.com/api/v2/"
             }
         )
         )
