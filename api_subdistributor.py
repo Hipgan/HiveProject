@@ -20,7 +20,7 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
     }
 
     def get_distributor_ids(manufacturer_id):
-        if manufacturer_id == "myAquadeck":
+        if manufacturer_id == "MyAquadeck":
             return {
                 "Golden Coast": "ef73acdbda854f5485691f38329b306f",
                 "Pomaz": "5d5b62fa8dd94e3c9009929f2682f331",
