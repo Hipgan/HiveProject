@@ -84,7 +84,6 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
                 "audience": "https://ebusinesscloud.eu.auth0.com/api/v2/"
             }
         )
-        )
         if token_resp.status_code != 200:
             return f"❌ Token ophalen mislukt: {token_resp.text}"
         access_token = token_resp.json()["access_token"]
