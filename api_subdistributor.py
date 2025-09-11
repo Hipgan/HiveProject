@@ -195,7 +195,7 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
                 }
             ]
         }
-        resp = requests.post(f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/customObjects/distributor%20-{distributor_id}/bulkUpsert", headers=api_headers, json=bulk_payload)
+        resp = requests.post(f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/customObjects/distributor-{distributor_id}/bulkUpsert", headers=api_headers, json=bulk_payload)
         if resp.status_code != 200:
             return f"❌ Fout bij bulk upsert: {resp.text}"
 
