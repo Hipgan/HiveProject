@@ -7,7 +7,7 @@ def bulk_upsert(manufacturer_id, client_id, client_secret, user_json):
         item_id = user_obj.get('hiveCPQId') or user_obj.get('parent_dealerId')
         if not item_id:
             return "Fout: Geen hiveCPQId of parent_dealerId in JSON!"
-        custom_object_type = f"distributor -{user_obj.get('parent_dealerId', '')}"
+        custom_object_type = f"distributor-{user_obj.get('parent_dealerId', '')}"
 
         token_url = "https://ebusinesscloud.eu.auth0.com/oauth/token"
         token_payload = {
