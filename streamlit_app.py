@@ -9,6 +9,8 @@ from api_step4 import move_segments_to_step4
 from api_ExportBom import export_bom_to_excel  # aangepast: accepteert nu lijst van ids
 from api_distributor import verwerk_distributeur
 from api_subdistributor import verwerk_subdistributeur
+from api_companies import get_companies_for_distributor_excel
+
 
 import pandas as pd
 
@@ -79,6 +81,7 @@ functionaliteit = st.sidebar.selectbox(
         "Get all project segment items",
         "Get all project segments",
         "Get all companies",
+        "Get companies (per distributor)",  # <-- NIEUW
         "Update Units",
         "Move to Step 4",
         "Export BOM",
@@ -86,6 +89,7 @@ functionaliteit = st.sidebar.selectbox(
         "Import Subdistributor"
     ]
 )
+
 
 # 1. BulkUpsert
 if functionaliteit == "BulkUpsert":
@@ -320,6 +324,47 @@ elif functionaliteit == "Import Subdistributor":
                     resultaat = verwerk_subdistributeur(df, selected_index, manufacturer_id, client_id, client_secret)
                 st.text_area("Log:", resultaat, height=300)
                 st.download_button("📥 Download log", resultaat, file_name="log_subdistributor.txt")
+
+# 9. Export sub-distributor and distributor data"
+elif functionaliteit == "Get companies (per distributor)":
+    st.title("Get companies (per distributor)")
+    st.markdown("""
+    Genereer een Excel met **alleen** de opgegeven **distributeur** en **zijn subdistributeurs**.<br>
+    Kolommen en logica zijn identiek aan **Get all companies**.
+    """, unsafe_allow_html=True)
+
+    distributor_id_input = st.text_input("Distributeur ID (verplicht)")
+    manufacturer_slug_opt = st.text_input("Manufacturer slug (optioneel, bv. 'MyAquadeck')", value="")
+
+    if st.button("Genereer Excel (distributeur + subdistributeurs)"):
+        if not all([manufacturer_id, client_id, client_secret, distributor_id_input.strip()]):
+            st.error("Vul alle API-credentials én de distributeur ID in!")
+        else:
+            with st.spinner('Ophalen en converteren...'):
+                excel_content = get_companies_for_distributor_excel(
+                    manufacturer_id=manufacturer_id,
+                    client_id=client_id,
+                    client_secret=client_secret,
+                    distributor_id=distributor_id_input.strip(),
+                    manufacturer_slug=(manufacturer_slug_opt.strip() or None)
+                )
+
+            # Zelfde return-contract als elders: BytesIO OF (None, "fout")
+            if isinstance(excel_content, tuple) and excel_content[0] is None:
+                st.error(excel_content[1])
+            elif not excel_content:
+                st.error("Onbekende fout of geen data opgehaald.")
+            else:
+                st.success("Excel succesvol gegenereerd!")
+                # Zorg dat download bytes zijn
+                data_bytes = excel_content.getvalue() if hasattr(excel_content, "getvalue") else excel_content
+                st.download_button(
+                    label="Download Companies Excel (distributeur)",
+                    data=data_bytes,
+                    file_name=f"bedrijven_export_{distributor_id_input.strip()}.xlsx",
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+
 
 
 st.markdown("""
