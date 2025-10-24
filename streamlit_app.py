@@ -9,7 +9,7 @@ from api_step4 import move_segments_to_step4
 from api_ExportBom import export_bom_to_excel  # aangepast: accepteert nu lijst van ids
 from api_distributor import verwerk_distributeur
 from api_subdistributor import verwerk_subdistributeur
-from api_companies import get_companies_for_distributor_excel
+from get_all_companies_excel import get_companies_for_distributor_excel
 
 
 import pandas as pd
