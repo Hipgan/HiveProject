@@ -206,7 +206,7 @@ def verwerk_distributeur(df, row_number, manufacturer_id, client_id, client_secr
         }
 
         resp = requests.post(
-            f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/customObjects/distributor%20-{company_id}/bulkUpsert",
+            f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/customObjects/distributor-{company_id}/bulkUpsert",
             headers=api_headers,
             json=bulk_payload
         )
