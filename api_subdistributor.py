@@ -16,7 +16,7 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
     }
     COUNTRY_MAP = {
         "Belgium": "BE", "Germany": "DE", "The Netherlands": "NL", "Netherlands": "NL",
-        "France": "FR", "Spain": "ES", "United Kingdom": "UK"
+        "France": "FR", "Spain": "ES", "United Kingdom": "GB"
     }
 
     def get_distributor_ids(manufacturer_id):
