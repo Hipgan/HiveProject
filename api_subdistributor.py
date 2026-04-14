@@ -81,10 +81,6 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
         return match.group(1) if match else None
 
     def extract_group_code(value):
-        """
-        Extracteert alleen de group code (bv. D44, B35, C20)
-        uit waarden zoals 'D44 (44% on everything)'
-        """
         if not value:
             return ""
 
@@ -156,6 +152,7 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
         if not country_code:
             return "❌ Ongeldige country code"
 
+        # Eerste payload: company aanmaken/updaten
         payload = {
             "info": {
                 "address": {
@@ -178,7 +175,9 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
                 ),
                 "preferredLanguage": language
             },
-            "productStore": {"enabled": False},
+            "productStore": {
+                "enabled": False
+            },
             "subDistributorSettings": {
                 "distributorId": distributor_id
             }
@@ -209,35 +208,6 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
                 return f"❌ Fout bij bijwerken: {resp.text}"
 
             l(f"✅ Subdistributeur bijgewerkt. Company ID: {company_id}")
-
-        # Extra PUT-call voor correspondence/order emails
-        order_emails = []
-        if distributor_email:
-            order_emails.append(distributor_email)
-        if subdistributor_email:
-            order_emails.append(subdistributor_email)
-
-        order_email_payload = {
-            "info": {
-                "name": subdistributor_name
-            },
-            "productStore": {
-                "enabled": False
-            },
-            "subDistributorSettings": {
-                "orderEmails": order_emails
-            }
-        }
-
-        resp = requests.put(
-            f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/companies/{company_id}",
-            headers=api_headers,
-            json=order_email_payload
-        )
-        if resp.status_code != 204:
-            return f"❌ Fout bij invullen orderEmails: {resp.text}"
-
-        l(f"✅ orderEmails ingevuld: {order_emails}")
 
         invoice_payload = {
             "type": "INVOICE",
@@ -349,6 +319,35 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
             return f"❌ Fout bij bulk upsert: {resp.text}"
 
         l("✅ Bulk upsert uitgevoerd.")
+
+        # Aparte PUT-call op het einde voor orderEmails
+        order_emails = []
+        if distributor_email:
+            order_emails.append(distributor_email)
+        if subdistributor_email:
+            order_emails.append(subdistributor_email)
+
+        order_email_payload = {
+            "info": {
+                "name": subdistributor_name
+            },
+            "productStore": {
+                "enabled": False
+            },
+            "subDistributorSettings": {
+                "orderEmails": order_emails
+            }
+        }
+
+        resp = requests.put(
+            f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/companies/{company_id}",
+            headers=api_headers,
+            json=order_email_payload
+        )
+        if resp.status_code != 204:
+            return f"❌ Fout bij invullen orderEmails: {resp.text}"
+
+        l(f"✅ orderEmails ingevuld: {order_emails}")
 
         reset_resp = requests.post(
             f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/resetCustomObjectUpdateTimestamp",
