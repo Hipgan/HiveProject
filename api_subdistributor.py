@@ -1,8 +1,7 @@
-import os
 import requests
-import json
 import pandas as pd
 import re
+
 
 def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_secret):
     log = []
@@ -11,11 +10,15 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
         log.append(str(msg))
 
     LANGUAGE_MAP = {
-        "Deutsch": "de", "German": "de",
-        "Nederlands": "nl", "Dutch": "nl",
+        "Deutsch": "de",
+        "German": "de",
+        "Nederlands": "nl",
+        "Dutch": "nl",
         "English": "en",
-        "Français": "fr", "French": "fr",
-        "Español": "es", "Spanish": "es"
+        "Français": "fr",
+        "French": "fr",
+        "Español": "es",
+        "Spanish": "es"
     }
 
     COUNTRY_MAP = {
@@ -70,6 +73,7 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
 
     def val_postcode(name, row):
         waarde = val(name, row)
+
         if re.match(r"^\d+\.0$", waarde):
             waarde = str(int(float(waarde)))
 
@@ -77,16 +81,36 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
         return f"{match.group(1)} {match.group(2)}" if match else waarde
 
     def extract_company_id_from_url(url):
-        match = re.search(r"companies/([a-f0-9]{32})", url)
+        match = re.search(r"companies/([a-f0-9]{32})", str(url))
         return match.group(1) if match else None
 
     def extract_group_code(value):
+        """
+        Extracteert alleen de group code (bv. D44, B35, C20)
+        uit waarden zoals 'D44 (44% on everything)'.
+        """
         if not value:
             return ""
 
         value = str(value).strip()
         match = re.match(r"^([A-Za-z]+[0-9]+)", value)
         return match.group(1) if match else value
+
+    def unique_non_empty(values):
+        result = []
+        seen = set()
+
+        for item in values:
+            cleaned = str(item).strip()
+            if not cleaned:
+                continue
+
+            lowered = cleaned.lower()
+            if lowered not in seen:
+                seen.add(lowered)
+                result.append(cleaned)
+
+        return result
 
     try:
         row = df.iloc[row_number]
@@ -102,6 +126,9 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
         distributor_email = distributor["email"]
 
         subdistributor_name = val("Company Name of subdistributor (Pool Builder)", row)
+        if not subdistributor_name:
+            return "❌ Geen subdistributeurnaam gevonden."
+
         subdistributor_email = val(
             "Email address of the company (please provide ONLY 1 mail-address)",
             row
@@ -119,13 +146,15 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
         if company_exists:
             url = val("Please add URL from subdistributor underneath", row)
             company_id = extract_company_id_from_url(url)
+
             if not company_id:
                 return "❌ Geen geldige URL voor bestaande subdistributeur."
+
             method = "PUT"
             l(f"ℹ️ Bestaande subdistributeur gedetecteerd. Company ID: {company_id}")
         else:
-            method = "POST"
             company_id = None
+            method = "POST"
             l("ℹ️ Nieuwe subdistributeur zal aangemaakt worden.")
 
         token_resp = requests.post(
@@ -142,7 +171,10 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
         if token_resp.status_code != 200:
             return f"❌ Token ophalen mislukt: {token_resp.text}"
 
-        access_token = token_resp.json()["access_token"]
+        access_token = token_resp.json().get("access_token")
+        if not access_token:
+            return "❌ Geen access_token ontvangen."
+
         api_headers = {
             "Authorization": f"Bearer {access_token}",
             "Content-Type": "application/json"
@@ -150,31 +182,34 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
 
         country_code = COUNTRY_MAP.get(val("Company Address: Country", row))
         if not country_code:
-            return "❌ Ongeldige country code"
+            return "❌ Ongeldige country code voor company address."
 
-        # Eerste payload: company aanmaken/updaten
-        payload = {
-            "info": {
-                "address": {
-                    "addressLine1": val("Company Address: Address line 1 (e.g. street + nbr)", row),
-                    "addressLine2": val("Company Address: Address line 2", row),
-                    "city": val("Company Address: City", row),
-                    "postalCode": val_postcode(
-                        "Company Address: Postal Code (e.g. 9999 AA (for NL) or 9999 (for BE))",
-                        row
-                    ),
-                    "countryIso": country_code
-                },
-                "name": subdistributor_name,
-                "description": subdistributor_name,
-                "vatNumber": val("VAT Number", row),
-                "email": subdistributor_email,
-                "telephone": val(
-                    "Phone Number (please use ISO format with country code - e.g. +31 495 430 317)",
-                    row
-                ),
-                "preferredLanguage": language
-            },
+        company_address = {
+            "addressLine1": val("Company Address: Address line 1 (e.g. street + nbr)", row),
+            "addressLine2": val("Company Address: Address line 2", row),
+            "city": val("Company Address: City", row),
+            "postalCode": val_postcode(
+                "Company Address: Postal Code (e.g. 9999 AA (for NL) or 9999 (for BE))",
+                row
+            ),
+            "countryIso": country_code
+        }
+
+        company_info = {
+            "address": company_address,
+            "name": subdistributor_name,
+            "description": subdistributor_name,
+            "vatNumber": val("VAT Number", row),
+            "email": subdistributor_email,
+            "telephone": val(
+                "Phone Number (please use ISO format with country code - e.g. +31 495 430 317)",
+                row
+            ),
+            "preferredLanguage": language
+        }
+
+        create_or_update_payload = {
+            "info": company_info,
             "productStore": {
                 "enabled": False
             },
@@ -187,8 +222,9 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
             resp = requests.post(
                 f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/companies",
                 headers=api_headers,
-                json=payload
+                json=create_or_update_payload
             )
+
             if resp.status_code != 201:
                 return f"❌ Fout bij aanmaken: {resp.text}"
 
@@ -202,8 +238,9 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
             resp = requests.put(
                 f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/companies/{company_id}",
                 headers=api_headers,
-                json=payload
+                json=create_or_update_payload
             )
+
             if resp.status_code != 204:
                 return f"❌ Fout bij bijwerken: {resp.text}"
 
@@ -211,14 +248,14 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
 
         invoice_payload = {
             "type": "INVOICE",
-            "address": payload["info"]["address"],
-            "companyName": payload["info"]["name"],
+            "address": company_address,
+            "companyName": subdistributor_name,
             "contactPerson": val("Delivery Address: Contact Person", row),
-            "contactPhone": payload["info"]["telephone"],
-            "email": payload["info"]["email"],
+            "contactPhone": company_info["telephone"],
+            "email": company_info["email"],
             "canChangeAddress": False,
             "canChangeAddressOnPlaceOrder": False,
-            "vatNumber": payload["info"]["vatNumber"]
+            "vatNumber": company_info["vatNumber"]
         }
 
         resp = requests.post(
@@ -226,6 +263,7 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
             headers=api_headers,
             json=invoice_payload
         )
+
         if resp.status_code != 201:
             return f"❌ Fout bij toevoegen INVOICE adres: {resp.text}"
 
@@ -246,6 +284,7 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
                 ),
                 "countryIso": delivery_country_code
             }
+
             delivery_company = val("Delivery Address: Name of address", row)
             delivery_email = val(
                 "Delivery Address: Email address to be used in delivery-communication (please provide ONLY 1 mail-address)",
@@ -270,8 +309,11 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
             "email": delivery_email,
             "canChangeAddress": False,
             "canChangeAddressOnPlaceOrder": True,
-            "vatNumber": "" if delivery_company != invoice_payload["companyName"]
-            else invoice_payload["vatNumber"]
+            "vatNumber": (
+                ""
+                if delivery_company != invoice_payload["companyName"]
+                else invoice_payload["vatNumber"]
+            )
         }
 
         resp = requests.post(
@@ -279,6 +321,7 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
             headers=api_headers,
             json=delivery_payload
         )
+
         if resp.status_code != 201:
             return f"❌ Fout bij toevoegen DELIVERY adres: {resp.text}"
 
@@ -302,8 +345,8 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
                         {"key": "hiveCPQId", "value": company_id, "dataType": "STRING"},
                         {"key": "parent_dealerId", "value": distributor_id, "dataType": "STRING"},
                         {"key": "customer price group", "value": price_group, "dataType": "STRING"},
-                        {"key": "name", "value": payload["info"]["name"], "dataType": "STRING"},
-                        {"key": "description", "value": payload["info"]["description"], "dataType": "STRING"},
+                        {"key": "name", "value": company_info["name"], "dataType": "STRING"},
+                        {"key": "description", "value": company_info["description"], "dataType": "STRING"},
                         {"key": "company discount group", "value": discount_group, "dataType": "STRING"}
                     ]
                 }
@@ -315,26 +358,24 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
             headers=api_headers,
             json=bulk_payload
         )
+
         if resp.status_code != 200:
             return f"❌ Fout bij bulk upsert: {resp.text}"
 
         l("✅ Bulk upsert uitgevoerd.")
 
-        # Aparte PUT-call op het einde voor orderEmails
-        order_emails = []
-        if distributor_email:
-            order_emails.append(distributor_email)
-        if subdistributor_email:
-            order_emails.append(subdistributor_email)
+        order_emails = unique_non_empty([
+            distributor_email,
+            subdistributor_email
+        ])
 
-        order_email_payload = {
-            "info": {
-                "name": subdistributor_name
-            },
+        final_order_email_payload = {
+            "info": company_info,
             "productStore": {
                 "enabled": False
             },
             "subDistributorSettings": {
+                "distributorId": distributor_id,
                 "orderEmails": order_emails
             }
         }
@@ -342,8 +383,9 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
         resp = requests.put(
             f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/companies/{company_id}",
             headers=api_headers,
-            json=order_email_payload
+            json=final_order_email_payload
         )
+
         if resp.status_code != 204:
             return f"❌ Fout bij invullen orderEmails: {resp.text}"
 
@@ -353,6 +395,7 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
             f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/resetCustomObjectUpdateTimestamp",
             headers=api_headers
         )
+
         if reset_resp.status_code != 204:
             return f"⚠️ Reset timestamp faalde: {reset_resp.text}"
 
