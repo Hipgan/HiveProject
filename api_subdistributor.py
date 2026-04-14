@@ -85,10 +85,6 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
         return match.group(1) if match else None
 
     def extract_group_code(value):
-        """
-        Extracteert alleen de group code (bv. D44, B35, C20)
-        uit waarden zoals 'D44 (44% on everything)'.
-        """
         if not value:
             return ""
 
@@ -106,11 +102,75 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
                 continue
 
             lowered = cleaned.lower()
-            if lowered not in seen:
-                seen.add(lowered)
-                result.append(cleaned)
+            if lowered in seen:
+                continue
+
+            seen.add(lowered)
+            result.append(cleaned)
 
         return result
+
+    def get_access_token(client_id, client_secret):
+        token_resp = requests.post(
+            "https://ebusinesscloud.eu.auth0.com/oauth/token",
+            headers={"Content-Type": "application/json"},
+            json={
+                "grant_type": "client_credentials",
+                "client_id": client_id,
+                "client_secret": client_secret,
+                "audience": "https://ebusinesscloud.eu.auth0.com/api/v2/"
+            }
+        )
+
+        if token_resp.status_code != 200:
+            raise RuntimeError(f"Token ophalen mislukt: {token_resp.text}")
+
+        access_token = token_resp.json().get("access_token")
+        if not access_token:
+            raise RuntimeError("Geen access_token ontvangen.")
+
+        return access_token
+
+    def get_company_payload_for_update(api_headers, manufacturer_id, company_id):
+        """
+        Haalt de huidige company op uit HiveCPQ en bouwt hiervan een veilige PUT-payload.
+        Zo vermijden we dat velden leeg worden door een onvolledige of fout gevormde body.
+        """
+        resp = requests.get(
+            f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/companies/{company_id}",
+            headers=api_headers
+        )
+
+        if resp.status_code != 200:
+            raise RuntimeError(f"Company ophalen mislukt: {resp.text}")
+
+        company = resp.json()
+
+        payload = {
+            "info": company.get("info") or {},
+            "productStore": company.get("productStore") or {"enabled": False},
+            "subDistributorSettings": {}
+        }
+
+        # subDistributorSettings veilig opbouwen
+        sub_settings = company.get("subDistributorSettings") or {}
+
+        # distributorId kan in sommige responses als object-link terugkomen
+        distributor_value = None
+        if isinstance(sub_settings.get("distributor"), dict):
+            distributor_value = sub_settings["distributor"].get("id")
+        elif sub_settings.get("distributorId"):
+            distributor_value = sub_settings.get("distributorId")
+
+        if distributor_value:
+            payload["subDistributorSettings"]["distributorId"] = distributor_value
+
+        # Als er al andere subdistributorvelden bestaan, behouden we die waar mogelijk
+        for key, value in sub_settings.items():
+            if key not in ["distributor", "distributorId", "orderEmails"]:
+                payload["subDistributorSettings"][key] = value
+
+        return payload
 
     try:
         row = df.iloc[row_number]
@@ -157,23 +217,7 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
             method = "POST"
             l("ℹ️ Nieuwe subdistributeur zal aangemaakt worden.")
 
-        token_resp = requests.post(
-            "https://ebusinesscloud.eu.auth0.com/oauth/token",
-            headers={"Content-Type": "application/json"},
-            json={
-                "grant_type": "client_credentials",
-                "client_id": client_id,
-                "client_secret": client_secret,
-                "audience": "https://ebusinesscloud.eu.auth0.com/api/v2/"
-            }
-        )
-
-        if token_resp.status_code != 200:
-            return f"❌ Token ophalen mislukt: {token_resp.text}"
-
-        access_token = token_resp.json().get("access_token")
-        if not access_token:
-            return "❌ Geen access_token ontvangen."
+        access_token = get_access_token(client_id, client_secret)
 
         api_headers = {
             "Authorization": f"Bearer {access_token}",
@@ -228,7 +272,8 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
             if resp.status_code != 201:
                 return f"❌ Fout bij aanmaken: {resp.text}"
 
-            company_id = resp.json().get("id")
+            response_json = resp.json()
+            company_id = response_json.get("id")
             if not company_id:
                 return "❌ Company aangemaakt, maar geen company_id teruggekregen."
 
@@ -364,26 +409,30 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
 
         l("✅ Bulk upsert uitgevoerd.")
 
+        # Finale stap:
+        # haal de actuele company op uit Hive en update alleen orderEmails daarop
         order_emails = unique_non_empty([
             distributor_email,
             subdistributor_email
         ])
 
-        final_order_email_payload = {
-            "info": company_info,
-            "productStore": {
-                "enabled": False
-            },
-            "subDistributorSettings": {
-                "distributorId": distributor_id,
-                "orderEmails": order_emails
-            }
-        }
+        final_payload = get_company_payload_for_update(
+            api_headers=api_headers,
+            manufacturer_id=manufacturer_id,
+            company_id=company_id
+        )
+
+        # Veiligheid: forceer distributorId indien niet teruggekomen in GET-payload
+        final_payload.setdefault("subDistributorSettings", {})
+        final_payload["subDistributorSettings"]["distributorId"] = (
+            final_payload["subDistributorSettings"].get("distributorId") or distributor_id
+        )
+        final_payload["subDistributorSettings"]["orderEmails"] = order_emails
 
         resp = requests.put(
             f"https://connect.hivecpq.com/api/v1/manufacturers/{manufacturer_id}/companies/{company_id}",
             headers=api_headers,
-            json=final_order_email_payload
+            json=final_payload
         )
 
         if resp.status_code != 204:
