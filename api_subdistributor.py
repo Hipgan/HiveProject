@@ -28,7 +28,9 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
         "Netherlands": "NL",
         "France": "FR",
         "Spain": "ES",
-        "United Kingdom": "GB"
+        "United Kingdom": "GB",
+        "Morocco": "MA",
+        "Marocco": "MA"
     }
 
     def get_distributor_data(manufacturer_id):
