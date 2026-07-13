@@ -349,8 +349,11 @@ def verwerk_subdistributeur(df, row_number, manufacturer_id, client_id, client_s
         if not subdistributor_name:
             return "❌ Geen subdistributeurnaam gevonden."
 
+        # FIX:
+        # Hier ontbrak de parameter 'row'.
         subdistributor_email = val(
-            "Email address of the company (please provide ONLY 1 mail-address)"
+            "Email address of the company (please provide ONLY 1 mail-address)",
+            row
         )
 
         language = LANGUAGE_MAP.get(val("Preferred Language", row), "en")
